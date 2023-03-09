@@ -1,2 +1,2 @@
-# MIPT
+# KT
 Python Project
