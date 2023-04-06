@@ -3,6 +3,7 @@ import pygame
 import sys
 import random
 
+pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
 pygame.init()
 
 # create window
@@ -10,7 +11,7 @@ screen = pygame.display.set_mode((432, 768))
 
 # set fps of the game
 clock = pygame.time.Clock()
-game_font = pygame.font.Font('04B_19.ttf', 40)
+game_font = pygame.font.Font('04B_19.ttf', 35)
 
 # add gravity
 gravity = 0.25
@@ -18,7 +19,7 @@ bird_movement = 0
 score = 0
 high_score = 0
 
-game_active = True
+game_active = False
 
 # create bg
 bg = pygame.image.load('imgs/bg.png').convert()
@@ -76,6 +77,7 @@ def draw_pipe(pipes):
 def check_collision(pipes):
     for pipe in pipes:
         if bird_rect.colliderect(pipe):
+            hit_sound.play()
             return False
     if bird_rect.top <= -75 or bird_rect.bottom >= 650:
         return False
@@ -99,6 +101,7 @@ def get_score():
     for pipe in pipe_list:
         if 95 < pipe.centerx < 105 and bird_rect.centery < pipe.centery:
             score += 1
+            score_sound.play()
             return score
     return score
 
@@ -115,7 +118,7 @@ def draw_score(game_state):
 
     if game_state == 'game_over':
         score_surface = game_font.render(f'Score: {int(get_score())}', True, (255, 255, 255))
-        score_rect = score_surface.get_rect(center=(216, 150))
+        score_rect = score_surface.get_rect(center=(216, 120))
         screen.blit(score_surface, score_rect)
 
         high_score_surface = game_font.render(f"High Score: {int(get_high_score())}", True, (255, 255, 255))
@@ -127,7 +130,6 @@ def update_score(score, high_score):
     if score > high_score:
         high_score = score
     return high_score
-
 
 
 # create pipe
@@ -144,6 +146,19 @@ pipe_height = [200, 250, 300, 350, 400]
 birdflap = pygame.USEREVENT + 1
 pygame.time.set_timer(birdflap, 100)
 
+# Menu game start
+menu_surface = pygame.transform.scale2x(pygame.image.load('imgs/message.png')).convert_alpha()
+menu_rect = menu_surface.get_rect(center=(216, 384))
+
+# Menu game over
+# game_over_surface = pygame.transform.scale2x(pygame.image.load('imgs/gameover.png')).convert_alpha()
+# game_over_rect = game_over_surface.get_rect(center=(216, 384))
+
+# Sound of the game
+flap_sound = pygame.mixer.Sound('sound/sfx_wing.wav')
+hit_sound = pygame.mixer.Sound('sound/sfx_hit.wav')
+score_sound = pygame.mixer.Sound('sound/sfx_point.wav')
+
 # while loop of the game
 while True:
     for event in pygame.event.get():
@@ -154,7 +169,8 @@ while True:
             if event.key == pygame.K_SPACE and game_active:
                 bird_movement = 0
                 bird_movement = -5
-            if event.key == pygame.K_1 and game_active == False:
+                flap_sound.play()
+            if event.key == pygame.K_SPACE and game_active == False:
                 game_active = True
                 pipe_list.clear()
                 bird_rect.center = (100, 384)
@@ -171,10 +187,11 @@ while True:
             bird, bird_rect = bird_animation()
 
     screen.blit(bg, (0, 0))
+
     if game_active:
         # bird
         bird_movement += gravity
-        # tao ham xoay chim
+        # rotated_bird
         rotated_bird = rotate_bird(bird)
         bird_rect.centery += bird_movement
         screen.blit(rotated_bird, bird_rect)
@@ -184,8 +201,14 @@ while True:
         draw_pipe(pipe_list)
         draw_score('main game')
     else:
+        start_game_surface = game_font.render(f'Press SPACE to start', True, (255, 255, 255))
+        start_game_rect = start_game_surface.get_rect(center=(216, 630))
+        screen.blit(start_game_surface, start_game_rect)
+        screen.blit(menu_surface, menu_rect)
         high_score = update_score(score, high_score)
         draw_score('game_over')
+        # screen.blit(game_over_surface, game_over_rect)
+
     # base
     base_x_pos -= 1
     draw_base()
