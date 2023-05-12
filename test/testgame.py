@@ -1,3 +1,4 @@
+# Пока не знаем, почему она еще ошиблась
 import os
 import sys
 import unittest
